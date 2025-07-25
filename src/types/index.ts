@@ -6,8 +6,21 @@ export interface Author {
   avatarUrl: string;
 }
 
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  role: 'admin' | 'editor' | 'author';
+  avatarUrl?: string;
+  createdAt: string;
+  lastLogin?: string;
+  isActive: boolean;
+  resetToken?: string;
+  resetTokenExpiry?: string;
+}
+
 export interface Article {
-  authorId: any;
   id: string;
   slug: string;
   title: string;
@@ -17,7 +30,8 @@ export interface Article {
   imageUrl: string;
   category: string;
   tags?: string[];
-  author: Author;
+  authorId: string;
+  author?: Author;
   publishedAt: string;
   updatedAt: string;
   featured: boolean;
@@ -25,4 +39,13 @@ export interface Article {
   seoTitle?: string;
   seoDescription?: string;
   seoImage?: string;
+  views?: number;
+}
+
+export interface ArticleView {
+  id: string;
+  articleId: string;
+  timestamp: string;
+  userAgent: string;
+  ipAddress: string;
 }

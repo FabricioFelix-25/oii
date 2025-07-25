@@ -34,34 +34,17 @@ const ArticleEditor: React.FC = () => {
 
   const handleSave = async (articleData: Partial<Article>, isDraft: boolean) => {
     try {
-      // Geração do Slug e ajuste de featured
-      const slug = articleData.slug || generateSlug(articleData.title || 'new-article');
-      const featured = articleData.isDraft ? false : true;  // Definindo o campo 'featured'
-      
-      // Definindo o authorId
-      const authorId = articleData.authorId || "1";  // Usando '1' como autor padrão (ajustar conforme necessário)
-  
-      const updatedArticle = {
-        ...articleData,
-        slug,
-        featured,
-        authorId,  // Adicionando o authorId
-        publishedAt: isDraft ? null : new Date().toISOString(),
-      };
-  
       if (id) {
-        await updateArticle(id, updatedArticle);
+        await updateArticle(id, {...articleData, isDraft});
       } else {
-        await createArticle(updatedArticle);
+        await createArticle({...articleData, isDraft});
       }
+      return true;
     } catch (error) {
       console.error('Error saving article:', error);
       throw error;
     }
   };
-  
-  
-  
 
   const handlePreview = (articleData: Partial<Article>) => {
     setPreviewData(articleData);

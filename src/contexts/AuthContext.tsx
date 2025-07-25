@@ -1,18 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  avatarUrl?: string;
-  role: string;
-}
+import { User } from '../types';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  register: (userData: Partial<User>) => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (token: string, newPassword: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -50,23 +46,119 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // In a real app, this would be an API call
-      // For demo purposes, we'll just check a hardcoded credential
-      if (email === 'admin@example.com' && password === 'password') {
-        const user: User = {
-          id: '1',
-          name: 'Admin User',
-          email: 'admin@example.com',
-          avatarUrl: 'https://images.pexels.com/photos/2379005/pexels-photo-2379005.jpeg',
-          role: 'admin',
-        };
-        
-        setUser(user);
-        localStorage.setItem('user', JSON.stringify(user));
-        return user;
-      } else {
-        throw new Error('Invalid credentials');
+      console.log('Enviando email:', email); // Adicione isso
+console.log('Enviando senha:', password); // Adicione isso
+const response = await fetch('http://localhost:8080/auth/login', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ email, password }),
+});
+
+      if (!response.ok) {
+        let errorMessage = 'Falha na autenticação. Verifique suas credenciais.';
+        try {
+          // Tenta ler o corpo da resposta como JSON
+          const errorData = await response.json();
+          // Assume que o backend retorna um campo 'message' ou similar
+          errorMessage = errorData.message || errorData.error || JSON.stringify(errorData);
+        } catch (jsonError) {
+          // Se não for JSON, tenta ler como texto simples
+          try {
+            errorMessage = await response.text();
+          } catch (textError) {
+            console.error('Could not read response body:', textError);
+          }
+        }
+        console.error('Erro detalhado do backend:', errorMessage); // <--- LOG AQUI
+        throw new Error(errorMessage);
       }
+
+      const data = await response.json();
+      // ... o resto do seu código ...
+
+    } catch (error) {
+      console.error('Login error (catch):', error);
+      // Aqui você pode definir uma mensagem de erro para o usuário na UI
+      // Por exemplo: setErrorMessage(error.message);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const register = async (userData: Partial<User>) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://localhost:8080/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: userData.name,
+          email: userData.email,
+          password: userData.password,
+          role: userData.role?.toUpperCase() || 'EDITOR',
+          avatarUrl: userData.avatarUrl
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || 'Erro ao criar conta');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const forgotPassword = async (email: string) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://localhost:8080/api/auth/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Email não encontrado');
+      }
+
+      const message = await response.text();
+      alert(message);
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetPassword = async (token: string, newPassword: string) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://localhost:8080/api/auth/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token, newPassword }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Token inválido ou expirado');
+      }
+    } catch (error) {
+      console.error('Reset password error:', error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -84,6 +176,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isAuthenticated: !!user,
         isLoading,
         login,
+        register,
+        forgotPassword,
+        resetPassword,
         logout,
       }}
     >

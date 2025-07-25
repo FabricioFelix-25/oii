@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import CategoryColors from '../utils/categoryColors';
 
 const MainLayout: React.FC = () => {
   const location = useLocation();

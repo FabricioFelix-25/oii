@@ -44,9 +44,13 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article }) => {
         </p>
         <div className="flex items-center">
           <div className="h-8 w-8 rounded-full overflow-hidden mr-3">
-            
+            <img
+              src={article.author.avatarUrl}
+              alt={article.author.name}
+              className="h-full w-full object-cover"
+            />
           </div>
-          <span className="text-sm font-medium"></span>
+          <span className="text-sm font-medium">{article.author.name}</span>
         </div>
       </div>
     </article>

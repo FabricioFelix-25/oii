@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, FileText, Settings, User, LogOut } from 'lucide-react';
+import { Home, FileText, Settings, User, Users, LogOut } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const AdminSidebar: React.FC = () => {
@@ -38,6 +38,19 @@ const AdminSidebar: React.FC = () => {
             >
               <FileText className="h-5 w-5 mr-3" />
               New Article
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/admin/users"
+              className={({ isActive }) =>
+                `flex items-center py-3 px-4 ${
+                  isActive ? 'bg-neutral-800' : 'hover:bg-neutral-800'
+                } transition-colors duration-200`
+              }
+            >
+              <Users className="h-5 w-5 mr-3" />
+              Users
             </NavLink>
           </li>
           <li>

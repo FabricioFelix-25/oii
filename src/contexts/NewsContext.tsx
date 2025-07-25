@@ -1,15 +1,6 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { Article } from '../types';
-import { 
-  fetchArticles, 
-  fetchArticleById, 
-  fetchArticleBySlug, 
-  fetchAllArticles, 
-  fetchAuthors, 
-  createArticle as createArticleAPI, 
-  updateArticle as updateArticleAPI, 
-  deleteArticle as deleteArticleAPI 
-} from '/programas/oii/api';
+import * as api from '../api';
 
 interface NewsContextType {
   getFeaturedArticles: () => Promise<Article[]>;
@@ -49,14 +40,12 @@ interface NewsProviderProps {
 }
 
 export const NewsProvider: React.FC<NewsProviderProps> = ({ children }) => {
-
   const getFeaturedArticles = async (): Promise<Article[]> => {
-    const articles = await fetchArticles();
-    return articles.filter(article => article.featured).slice(0, 5);
+    return api.fetchFeaturedArticles();
   };
 
   const getLatestArticles = async (limit = 10): Promise<Article[]> => {
-    const articles = await fetchAllArticles();
+    const articles = await api.fetchArticles();
     return articles
       .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
       .filter(article => !article.isDraft)
@@ -64,91 +53,67 @@ export const NewsProvider: React.FC<NewsProviderProps> = ({ children }) => {
   };
 
   const getArticlesByCategory = async (category: string, limit = 10): Promise<Article[]> => {
-    const articles = await fetchAllArticles();
+    const articles = await api.fetchArticlesByCategory(category);
     return articles
-      .filter(article => 
-        article.category === category || 
-        article.category.includes(category) || 
-        category.includes(article.category)
-      )
       .filter(article => !article.isDraft)
       .slice(0, limit);
   };
 
   const getArticleById = async (id: string): Promise<Article> => {
-    return await fetchArticleById(id);
+    return api.fetchArticleById(id);
   };
 
   const getArticleBySlug = async (slug: string): Promise<Article> => {
-    return await fetchArticleBySlug(slug);
+    return api.fetchArticleBySlug(slug);
   };
 
   const getAllArticles = async (): Promise<Article[]> => {
-    return await fetchAllArticles();
+    const articles = await api.fetchArticles();
+    return articles.sort(
+      (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+    );
   };
 
   const getRelatedArticles = async (articleId: string, category: string, limit = 3): Promise<Article[]> => {
-    const articles = await fetchAllArticles();
+    const articles = await api.fetchArticlesByCategory(category);
     return articles
-      .filter(article => article.id !== articleId && article.category === category && !article.isDraft)
+      .filter(article => article.id !== articleId && !article.isDraft)
       .slice(0, limit);
   };
 
   const createArticle = async (article: Partial<Article>): Promise<Article> => {
-    return await createArticleAPI(article);
+    return api.createArticle(article);
   };
 
   const updateArticle = async (id: string, article: Partial<Article>): Promise<Article> => {
-    return await updateArticleAPI(id, article);
+    return api.updateArticle(id, article);
   };
 
   const deleteArticle = async (id: string): Promise<void> => {
-    await deleteArticleAPI(id);
+    return api.deleteArticle(id);
   };
 
   const searchArticles = async (query: string, tag?: string): Promise<Article[]> => {
-    const articles = await fetchAllArticles();
-    let results = articles.filter(article => !article.isDraft);
-    
-    if (tag) {
-      results = results.filter(article => 
-        article.tags && article.tags.some(t => 
-          t.toLowerCase().includes(tag.toLowerCase())
-        )
-      );
-    }
-    
-    if (query) {
-      const lowercaseQuery = query.toLowerCase();
-      results = results.filter(article => 
-        article.title.toLowerCase().includes(lowercaseQuery) ||
-        (article.content && article.content.toLowerCase().includes(lowercaseQuery)) ||
-        (article.excerpt && article.excerpt.toLowerCase().includes(lowercaseQuery))
-      );
-    }
-    
-    return results;
+    return api.searchArticles(query, tag);
   };
 
   const getCategories = async (): Promise<string[]> => {
-    const articles = await fetchAllArticles();
+    const articles = await api.fetchArticles();
     const categories = new Set(articles.map(article => article.category));
     return Array.from(categories);
   };
 
   const getAuthors = async (): Promise<string[]> => {
-    const authors = await fetchAuthors();
-    return authors;
+    const authors = await api.fetchAuthors();
+    return authors.map(author => author.name);
   };
 
   const getStats = async () => {
-    const articles = await fetchAllArticles();
+    const articles = await api.fetchArticles();
     const totalArticles = articles.length;
     const publishedArticles = articles.filter(article => !article.isDraft).length;
     const draftArticles = articles.filter(article => article.isDraft).length;
-    
     const categories = new Set(articles.map(article => article.category)).size;
-    
     const recentViews = Math.floor(Math.random() * 1000) + 500;
     
     return {

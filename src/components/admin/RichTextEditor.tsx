@@ -17,6 +17,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ initialValue, onChange 
     const editorElement = editorRef.current;
     if (editorElement) {
       editorElement.innerHTML = initialValue;
+      // Set default paragraph direction
+      document.execCommand('defaultParagraphSeparator', false, 'p');
+      // Force LTR text direction
+      document.execCommand('styleWithCSS', false, 'true');
+      document.execCommand('direction', false, 'ltr');
     }
   }, [initialValue]);
 
@@ -49,7 +54,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ initialValue, onChange 
   };
 
   return (
-    <div className="border border-neutral-300 rounded-md overflow-hidden">
+    <div className="border border-neutral-300 rounded-md overflow-hidden" dir="ltr">
       <div className="bg-neutral-50 border-b border-neutral-300 p-2 flex flex-wrap gap-1">
         <button 
           type="button" 
@@ -170,10 +175,15 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ initialValue, onChange 
       </div>
       <div
         ref={editorRef}
-        className="p-4 min-h-[300px] focus:outline-none"
+        className="p-4 min-h-[300px] focus:outline-none prose prose-sm max-w-none"
         contentEditable
         onInput={handleInput}
-        dangerouslySetInnerHTML={{ __html: initialValue }}
+        dir="ltr"
+        style={{ 
+          unicodeBidi: 'plaintext',
+          direction: 'ltr',
+          textAlign: 'left'
+        }}
       ></div>
     </div>
   );

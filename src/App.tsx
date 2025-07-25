@@ -16,6 +16,7 @@ import SearchPage from './pages/SearchPage';
 import LoginPage from './pages/LoginPage';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminArticleEditor from './pages/admin/ArticleEditor';
+import UserManagement from './pages/admin/UserManagement';
 import NotFoundPage from './pages/NotFoundPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
@@ -49,6 +50,7 @@ function App() {
                 <Route index element={<AdminDashboard />} />
                 <Route path="article/new" element={<AdminArticleEditor />} />
                 <Route path="article/edit/:id" element={<AdminArticleEditor />} />
+                <Route path="users" element={<UserManagement />} />
               </Route>
 
               {/* 404 */}

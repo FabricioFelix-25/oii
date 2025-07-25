@@ -8,6 +8,7 @@ const categories = [
   { name: 'Geopolitics', slug: 'geopolitics', color: 'geo', subcategories: ['Global Market', 'Conflicts', 'Diplomacy'] },
   { name: 'Programming', slug: 'programming', color: 'prog', subcategories: ['Web', 'Mobile', 'DevOps'] },
   { name: 'Games', slug: 'games', color: 'games', subcategories: ['Console', 'PC', 'Mobile Gaming'] },
+  { name: 'Trending', slug: 'trending', color: 'tech', subcategories: ['World News', 'Entertainment', 'Lifestyle'] }
 ];
 
 const Navbar: React.FC = () => {

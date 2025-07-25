@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, Save, Upload, X } from 'lucide-react';
-import { Article } from '../../types';
+import { Article, Author } from '../../types';
 import RichTextEditor from './RichTextEditor';
+import { fetchAuthors } from '../../api';
 
 interface ArticleFormProps {
   article?: Article;
@@ -21,6 +22,9 @@ const initialState: Partial<Article> = {
   seoTitle: '',
   seoDescription: '',
   seoImage: '',
+  authorId: '',
+  isDraft: true,
+  featured: false
 };
 
 const categories = [
@@ -35,14 +39,35 @@ const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onPreview })
   const [tagInput, setTagInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [authors, setAuthors] = useState<Author[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
+    const loadAuthors = async () => {
+      try {
+        const authorsList = await fetchAuthors();
+        setAuthors(authorsList);
+      } catch (error) {
+        console.error('Error loading authors:', error);
+      }
+    };
+    loadAuthors();
+  }, []);
+
+  useEffect(() => {
     if (article) {
-      setFormData(article);
+      setFormData({
+        ...article,
+        authorId: article.authorId || authors[0]?.id
+      });
       setImagePreview(article.imageUrl || null);
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        authorId: authors[0]?.id
+      }));
     }
-  }, [article]);
+  }, [article, authors]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -58,10 +83,9 @@ const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onPreview })
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Exibindo imagem localmente antes de enviar ao backend
-      const localUrl = URL.createObjectURL(file);
-      setImagePreview(localUrl);
-      setFormData((prev) => ({ ...prev, imageUrl: localUrl }));
+      const url = URL.createObjectURL(file);
+      setImagePreview(url);
+      setFormData((prev) => ({ ...prev, imageUrl: url }));
     }
   };
 
@@ -82,30 +106,25 @@ const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onPreview })
     }));
   };
 
+  const generateSlug = (title: string) => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '') + '-' + Math.random().toString(36).substring(2, 8);
+  };
+
   const handleSubmit = async (e: React.FormEvent, isDraft: boolean) => {
     e.preventDefault();
     setIsSaving(true);
-
-    // Geração do Slug com base no título
-    const generateSlug = (title: string) => {
-      return title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')  // Substitui caracteres não alfanuméricos por hífen
-        .replace(/(^-|-$)/g, '');      // Remove hífen no início e no fim
-    };
-
-    // Definir slug e featured
-    const slug = generateSlug(formData.title || 'new-article');
-    const featured = formData.isDraft ? false : true;  // Exemplo de como definir o campo 'featured'
-
-    const articleData = {
-      ...formData,
-      slug,  // Adicionando slug gerado
-      featured,  // Definindo se o artigo é destaque
-      publishedAt: isDraft ? null : new Date().toISOString(),  // Definindo a data de publicação se não for rascunho
-    };
-
     try {
+      const now = new Date().toISOString();
+      const articleData = {
+        ...formData,
+        isDraft,
+        slug: formData.slug || generateSlug(formData.title || ''),
+        publishedAt: formData.publishedAt || now,
+        updatedAt: now
+      };
       await onSave(articleData, isDraft);
       navigate('/admin');
     } catch (error) {
@@ -179,6 +198,27 @@ const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onPreview })
         </div>
 
         <div className="space-y-6">
+          <div>
+            <label htmlFor="authorId" className="block text-sm font-medium mb-1">
+              Author *
+            </label>
+            <select
+              id="authorId"
+              name="authorId"
+              value={formData.authorId}
+              onChange={handleChange}
+              className="input-field"
+              required
+            >
+              <option value="">Select an author</option>
+              {authors.map((author) => (
+                <option key={author.id} value={author.id}>
+                  {author.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div>
             <label htmlFor="category" className="block text-sm font-medium mb-1">
               Category *
@@ -273,6 +313,20 @@ const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onPreview })
             </div>
           </div>
 
+          <div>
+            <label htmlFor="featured" className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="featured"
+                name="featured"
+                checked={formData.featured}
+                onChange={(e) => setFormData(prev => ({ ...prev, featured: e.target.checked }))}
+                className="rounded border-neutral-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium">Featured Article</span>
+            </label>
+          </div>
+
           <div className="pt-4 border-t border-neutral-200">
             <h3 className="text-lg font-medium mb-4">SEO Settings</h3>
             <div className="space-y-4">
@@ -291,7 +345,6 @@ const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onPreview })
                 />
               </div>
               
-
               <div>
                 <label htmlFor="seoDescription" className="block text-sm font-medium mb-1">
                   SEO Description
